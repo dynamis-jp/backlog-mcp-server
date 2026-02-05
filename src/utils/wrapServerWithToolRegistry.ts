@@ -3,6 +3,7 @@ import {
   ToolCallback,
 } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ZodRawShapeCompat } from '@modelcontextprotocol/sdk/server/zod-compat.js';
+import { logger } from './logger.js';
 
 // Extended type that has the MCP core, a set of registered tool names, and a registration function
 export interface BacklogMCPServer extends McpServer {
@@ -33,7 +34,7 @@ export function wrapServerWithToolRegistry(
     handler: ToolCallback<ZodRawShapeCompat>
   ) => {
     if (s.__registeredToolNames!.has(name)) {
-      console.warn(`Skipping duplicate tool registration: ${name}`);
+      logger.warn(`Skipping duplicate tool registration: ${name}`);
       return;
     }
     s.__registeredToolNames!.add(name);

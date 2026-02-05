@@ -1,4 +1,4 @@
-import { countTokens } from './tokenCounter.js';
+import { countTokens, truncateToTokenLimit } from './tokenCounter.js';
 import { describe, it, expect } from '@jest/globals';
 
 describe('countTokens', () => {
@@ -39,5 +39,38 @@ describe('countTokens', () => {
 
   it('counts Japanese', () => {
     expect(countTokens('こんにちは')).toBe(5);
+  });
+});
+
+describe('truncateToTokenLimit', () => {
+  it('returns full text when under limit', () => {
+    const text = 'hello world foo';
+    expect(truncateToTokenLimit(text, 10)).toBe(text);
+  });
+
+  it('truncates text at the token boundary', () => {
+    const text = 'one two three four five';
+    const result = truncateToTokenLimit(text, 3);
+    // Should include exactly 3 tokens: 'one', 'two', 'three'
+    expect(countTokens(result)).toBe(3);
+    expect(result).toBe('one two three');
+  });
+
+  it('handles punctuation tokens correctly', () => {
+    const text = 'hello, world! foo';
+    // tokens: 'hello' ',' ' ' 'world' '!' ' ' 'foo'
+    // counted tokens: 'hello', ',', 'world', '!', 'foo' = 5
+    const result = truncateToTokenLimit(text, 3);
+    // Should include: 'hello', ',', 'world' (3 counted tokens)
+    expect(countTokens(result)).toBe(3);
+  });
+
+  it('returns empty string for empty input', () => {
+    expect(truncateToTokenLimit('', 5)).toBe('');
+  });
+
+  it('returns full text when limit equals token count', () => {
+    const text = 'one two three';
+    expect(truncateToTokenLimit(text, 3)).toBe(text);
   });
 });

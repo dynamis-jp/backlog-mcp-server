@@ -1,5 +1,5 @@
 import { SafeResult } from '../../types/result.js';
-import { countTokens } from '../../utils/tokenCounter.js';
+import { countTokens, truncateToTokenLimit } from '../../utils/tokenCounter.js';
 
 export function wrapWithTokenLimit<I, O>(
   fn: (input: I) => Promise<SafeResult<O>>,
@@ -19,10 +19,10 @@ export function wrapWithTokenLimit<I, O>(
     const tokenCount = countTokens(fullText);
 
     if (tokenCount > maxTokens) {
-      const roughCut = fullText.slice(0, Math.floor(maxTokens * 4));
+      const truncated = truncateToTokenLimit(fullText, maxTokens);
       return {
         kind: 'ok',
-        data: `${roughCut}\n...(output truncated due to token limit)`,
+        data: `${truncated}\n...(output truncated due to token limit)`,
       };
     }
 

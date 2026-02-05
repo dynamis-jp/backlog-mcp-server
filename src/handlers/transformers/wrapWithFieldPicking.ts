@@ -1,5 +1,6 @@
 import { parse, SelectionSetNode } from 'graphql';
 import { isErrorLike, SafeResult } from '../../types/result.js';
+import { logger } from '../../utils/logger.js';
 
 export function wrapWithFieldPicking<I extends { fields?: string }, O>(
   fn: (input: I) => Promise<SafeResult<O>>
@@ -12,25 +13,33 @@ export function wrapWithFieldPicking<I extends { fields?: string }, O>(
       return result;
     }
 
-    const selectionSet = parseFieldsSelection(fields);
-    const resultData = result.data;
+    try {
+      const selectionSet = parseFieldsSelection(fields);
+      const resultData = result.data;
 
-    if (Array.isArray(resultData)) {
-      return {
-        kind: 'ok',
-        data: resultData.map((item) =>
-          pickFieldsFromData(item, selectionSet)
-        ) as unknown as O,
-      };
-    } else if (typeof result === 'object' && result !== null) {
-      return {
-        kind: 'ok',
-        data: pickFieldsFromData(
-          resultData as Record<string, unknown>,
-          selectionSet
-        ) as O,
-      };
-    } else {
+      if (Array.isArray(resultData)) {
+        return {
+          kind: 'ok',
+          data: resultData.map((item) =>
+            pickFieldsFromData(item, selectionSet)
+          ) as unknown as O,
+        };
+      } else if (typeof result === 'object' && result !== null) {
+        return {
+          kind: 'ok',
+          data: pickFieldsFromData(
+            resultData as Record<string, unknown>,
+            selectionSet
+          ) as O,
+        };
+      } else {
+        return result;
+      }
+    } catch (err) {
+      logger.warn(
+        { err, fields },
+        'Failed to parse fields selection; returning full result'
+      );
       return result;
     }
   };

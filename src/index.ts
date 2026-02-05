@@ -114,10 +114,36 @@ if (argv.exportTranslations) {
   process.exit(0);
 }
 
+// --- Process-level error handlers ---
+process.on('uncaughtException', (error) => {
+  logger.error({ err: error }, 'Uncaught exception');
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error({ err: reason }, 'Unhandled promise rejection');
+  process.exit(1);
+});
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info('Backlog MCP Server running on stdio');
+
+  // --- Graceful shutdown ---
+  const shutdown = async () => {
+    logger.info('Shutting down Backlog MCP Server...');
+    try {
+      await server.close();
+      logger.info('Server closed gracefully');
+    } catch (err) {
+      logger.error({ err }, 'Error during shutdown');
+    }
+    process.exit(0);
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
 main().catch((error) => {
